@@ -3,6 +3,9 @@ const otpService = require('../services/otp.service');
 const { sendOtpEmail } = require('../services/email.service');
 const ApiError = require('../utils/ApiError');
 
+// ── In-Memory Store (Fallback when no DB) ────────────────────────────
+const memoryStore = new Map();
+
 /**
  * @route   POST /api/v1/otp/generate
  * @desc    Generate a cryptographically secure OTP, hash it, store it, and email it.
@@ -11,37 +14,34 @@ const ApiError = require('../utils/ApiError');
 const generateOtp = async (req, res, next) => {
     try {
         const { email } = req.body;
-
-        // ── Step 1: Invalidate any existing OTPs for this email ──────────
-        // Prevents OTP accumulation and ensures only the latest OTP is valid.
-        await Otp.deleteMany({ email });
-
-        // ── Step 2: Generate a crypto-secure 6-digit OTP ─────────────────
         const plainOtp = otpService.generate();
-
-        // ── Step 3: Hash the OTP before storing in the database ──────────
-        // The plaintext OTP is NEVER persisted — only the bcrypt hash is saved.
         const hashedOtp = await otpService.hash(plainOtp);
+        const useCustomDb = !!process.env.MONGODB_URI;
 
-        // ── Step 4: Store the hashed OTP with email and auto-expiry ──────
-        await Otp.create({
-            email,
-            otp: hashedOtp,
-        });
+        if (useCustomDb) {
+            // ── MongoDB Mode ─────────────────────────────────────────────
+            await Otp.deleteMany({ email });
+            await Otp.create({ email, otp: hashedOtp });
+        } else {
+            // ── In-Memory Mode ───────────────────────────────────────────
+            // Overwrite existing entry for this email
+            memoryStore.set(email, {
+                otp: hashedOtp,
+                verified: false,
+                expiresAt: Date.now() + 60 * 1000 // 60 seconds from now
+            });
+        }
 
-        // ── Step 5: Send the plaintext OTP to the user's email ───────────
+        // ── Send Email ───────────────────────────────────────────────────
         await sendOtpEmail(email, plainOtp);
 
-        // ── Step 6: Respond with success ─────────────────────────────────
         res.status(200).json({
             success: true,
             message: `OTP sent successfully to ${email}`,
-            data: {
-                expiresInSeconds: 60,
-            },
+            data: { expiresInSeconds: 60 },
         });
     } catch (error) {
-        next(error); // Forward to central error handler
+        next(error);
     }
 };
 
@@ -53,33 +53,53 @@ const generateOtp = async (req, res, next) => {
 const verifyOtp = async (req, res, next) => {
     try {
         const { email, otp } = req.body;
+        const useCustomDb = !!process.env.MONGODB_URI;
+        let otpRecord;
 
-        // ── Step 1: Find the most recent OTP record for this email ───────
-        // If the TTL has expired, MongoDB has already deleted the document,
-        // so a null result means the OTP has expired or was never generated.
-        const otpRecord = await Otp.findOne({ email }).sort({ createdAt: -1 });
+        if (useCustomDb) {
+            // ── MongoDB Mode ─────────────────────────────────────────────
+            otpRecord = await Otp.findOne({ email }).sort({ createdAt: -1 });
 
-        if (!otpRecord) {
-            throw new ApiError(401, 'OTP has expired or does not exist. Please request a new one.');
+            if (!otpRecord) {
+                throw new ApiError(401, 'OTP has expired or does not exist. Please request a new one.');
+            }
+        } else {
+            // ── In-Memory Mode ───────────────────────────────────────────
+            const record = memoryStore.get(email);
+            if (!record) {
+                throw new ApiError(401, 'OTP has expired or does not exist. Please request a new one.');
+            }
+
+            // Check manual expiry
+            if (Date.now() > record.expiresAt) {
+                memoryStore.delete(email); // Cleanup
+                throw new ApiError(401, 'OTP has expired. Please request a new one.');
+            }
+
+            // Map the simple object to look like the Mongoose doc structure
+            otpRecord = record;
         }
 
-        // ── Step 2: Check if this OTP was already used ───────────────────
+        // ── Common Verification Logic ────────────────────────────────────
         if (otpRecord.verified) {
             throw new ApiError(410, 'This OTP has already been used. Please request a new one.');
         }
 
-        // ── Step 3: Compare the submitted OTP with the stored hash ───────
         const isMatch = await otpService.compare(otp, otpRecord.otp);
 
         if (!isMatch) {
             throw new ApiError(401, 'Invalid OTP. Please check and try again.');
         }
 
-        // ── Step 4: Mark as verified to prevent reuse ────────────────────
+        // Mark as verified
         otpRecord.verified = true;
-        await otpRecord.save();
+        if (useCustomDb) {
+            await otpRecord.save();
+        } else {
+            // Update the map entry
+            memoryStore.set(email, otpRecord);
+        }
 
-        // ── Step 5: Respond with success ─────────────────────────────────
         res.status(200).json({
             success: true,
             message: 'OTP verified successfully',
