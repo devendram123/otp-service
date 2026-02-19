@@ -1,10 +1,10 @@
 @echo off
 echo ========================================================
-echo   🚀 Deploying OTP API to GitHub for 12rajdev
+echo   🚀 Deploying OTP API to GitHub for devendram123
 echo ========================================================
 echo.
 echo [1/3] Checking if remote origin is set...
-git remote set-url origin https://github.com/12rajdev/otp-service.git
+git remote set-url origin https://github.com/devendram123/otp-service.git
 
 echo [2/3] Adding changes and committing...
 git add .
@@ -12,7 +12,7 @@ git commit -m "deploy: update project" 2>nul
 
 echo [3/3] Pushing to GitHub (You may be asked for credentials)...
 echo.
-echo IMPORTANT: If prompted, use your GitHub username (12rajdev) 
+echo IMPORTANT: If prompted, use your GitHub username (devendram123) 
 echo and your Personal Access Token (NOT your password).
 echo.
 git push -u origin main
@@ -23,7 +23,7 @@ if %errorlevel% neq 0 (
     echo    Note: You must have created the repository 'otp-service' on GitHub first!
     echo    Go to: https://github.com/new and name it 'otp-service'
 ) else (
-    echo ✅ Successfully pushed to https://github.com/12rajdev/otp-service
+    echo ✅ Successfully pushed to https://github.com/devendram123/otp-service
     echo.
     echo Next steps:
     echo 1. Go to https://dashboard.render.com

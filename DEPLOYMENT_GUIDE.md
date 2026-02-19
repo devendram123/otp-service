@@ -123,6 +123,7 @@ I have created a script to do this for you. Just run:
 Or manually:
 
 ```bash
+git remote set-url origin https://github.com/devendram123/otp-service.git
 git push -u origin main
 ```
 
