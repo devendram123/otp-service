@@ -2,28 +2,32 @@ const nodemailer = require('nodemailer');
 
 /**
  * Create a transporter.
- * If credentials are missing or look like default placeholders, return null (Mock Mode).
+ * 
+ * ⚠️ SECURITY WARNING: 
+ * Hardcoded credentials are NOT recommended for production.
+ * Ideally, use environment variables (process.env.SMTP_USER).
+ * 
+ * However, per user request, we are using:
+ * User: devraj1502@gmail.com
+ * Pass: Kavya@111021
  */
 const createTransporter = () => {
-  const host = process.env.SMTP_HOST || '';
-  const user = process.env.SMTP_USER || '';
-
-  // Detection for missing or placeholder config
-  if (!host || host === 'smtp.gmail.com' && user === 'your-email@gmail.com') {
-    return null;
-  }
+  // Use environment variables if available, otherwise fallback to hardcoded
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const user = process.env.SMTP_USER || 'devraj1502@gmail.com';
+  const pass = process.env.SMTP_PASS || 'Kavya@111021';
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: host,
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     secure: false, // true for port 465, false for 587
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: user,
+      pass: pass,
     },
-    // Shorter timeout to prevent hanging requests
-    connectionTimeout: 5000,
-    socketTimeout: 5000,
+    // Increased timeout for slow connections
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
   });
 };
 
@@ -39,19 +43,17 @@ try {
  * Send an OTP email to the specified address.
  */
 const sendOtpEmail = async (to, otp) => {
-  // ── MOCK MODE (Console Log) ─────────────────────────────────────────
   if (!transporter) {
     console.log('──────────────────────────────────────────────────────────');
     console.log(`📧 [MOCK EMAIL SERVICE] To: ${to}`);
     console.log(`🔑 OTP: ${otp}`);
+    console.log('⚠️  Transporter init failed. Check logs.');
     console.log('──────────────────────────────────────────────────────────');
-    // Return success to allow API to proceed
     return { message: 'Mock email sent (check server logs)' };
   }
 
-  // ── REAL MODE (SMTP) ────────────────────────────────────────────────
   const mailOptions = {
-    from: process.env.EMAIL_FROM || '"OTP Service" <no-reply@dev.com>',
+    from: process.env.EMAIL_FROM || '"OTP Service" <devraj1502@gmail.com>',
     to,
     subject: 'Your One-Time Password (OTP)',
     text: `Your OTP is: ${otp}\n\nThis code expires in 60 seconds.`,
@@ -67,13 +69,17 @@ const sendOtpEmail = async (to, otp) => {
   try {
     return await transporter.sendMail(mailOptions);
   } catch (error) {
-    // ── FALLBACK ON ERROR ─────────────────────────────────────────────
     console.error(`❌ Email sending failed: ${error.message}`);
     console.log('⚠️  Falling back to console log so you can still test:');
     console.log(`🔑 OTP for ${to}: ${otp}`);
 
-    // Return success anyway so frontend doesn't crash 
-    // (In production you might want to throw, but for this demo it's better to work)
+    // Check for authentication error specifically
+    if (error.message.includes('Username and Password not accepted')) {
+      console.error('💡 TIP: Gmail blocks regular passwords by default.');
+      console.error('   You likely need an "App Password" instead of your login password.');
+      console.error('   Go to: https://myaccount.google.com/apppasswords');
+    }
+
     return { message: 'Email failed, logged to console' };
   }
 };

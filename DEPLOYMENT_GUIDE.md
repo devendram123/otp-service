@@ -309,12 +309,12 @@ Click **Send** → you should see the health check JSON response.
 
 | What | URL / Command |
 |------|---------------|
-| **Live API** | `https://free-api-demo.onrender.com` |
-| **Health check** | `GET /` |
-| **Test endpoint** | `POST /api/test` |
+| **Live API** | `https://otp-service-pey4.onrender.com` |
+| **Health check** | `GET /health` |
+| **Generate OTP** | `POST /api/v1/otp/generate` |
+| **Verify OTP** | `POST /api/v1/otp/verify` |
 | **Render Dashboard** | [dashboard.render.com](https://dashboard.render.com) |
-| **View logs** | Render Dashboard → your service → **Logs** tab |
-| **Redeploy** | Push to GitHub → Render auto-deploys, OR click **Manual Deploy** in dashboard |
+
 
 ---
 
