@@ -27,7 +27,12 @@ const createTransporter = () => {
     },
     // Increased timeout for slow connections
     connectionTimeout: 10000,
+    // Force IPv4
+    family: 4,
     socketTimeout: 10000,
+    // Force IPv4 to avoid IPv6 ENETUNREACH issues on Render
+    logger: true, // Log failing attempts for debugging
+    debug: true,
   });
 };
 

@@ -20,6 +20,10 @@ const errorHandler = require('./middleware/errorHandler');
  */
 const app = express();
 
+// ── Trust Proxy (Required for Render/Heroku/AWS Load Balancers) ──────
+// Fixes "ERR_ERL_UNEXPECTED_X_FORWARDED_FOR"
+app.set('trust proxy', 1);
+
 // ── Security Headers ─────────────────────────────────────────────────
 app.use(helmet());
 
