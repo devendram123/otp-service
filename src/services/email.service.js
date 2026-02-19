@@ -9,13 +9,13 @@ const nodemailer = require('nodemailer');
  * 
  * However, per user request, we are using:
  * User: devraj1502@gmail.com
- * Pass: Kavya@111021
+ * Pass: lddazyxooxnbrxum
  */
 const createTransporter = () => {
   // Use environment variables if available, otherwise fallback to hardcoded
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const user = process.env.SMTP_USER || 'devraj1502@gmail.com';
-  const pass = process.env.SMTP_PASS || 'Kavya@111021';
+  const pass = process.env.SMTP_PASS || 'lddazyxooxnbrxum';
 
   return nodemailer.createTransport({
     host: host,
