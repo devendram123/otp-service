@@ -25,11 +25,12 @@ const createTransporter = () => {
       user: user,
       pass: pass,
     },
-    // Increased timeout for slow connections
-    connectionTimeout: 10000,
     // Force IPv4
     family: 4,
-    socketTimeout: 10000,
+    // Aggressive timeouts for slow Render network
+    greetingTimeout: 20000,
+    connectionTimeout: 20000,
+    socketTimeout: 20000,
     // Force IPv4 to avoid IPv6 ENETUNREACH issues on Render
     logger: true, // Log failing attempts for debugging
     debug: true,

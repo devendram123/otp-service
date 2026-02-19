@@ -28,7 +28,7 @@ const generateOtp = async (req, res, next) => {
             memoryStore.set(email, {
                 otp: hashedOtp,
                 verified: false,
-                expiresAt: Date.now() + 60 * 1000 // 60 seconds from now
+                expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutes
             });
         }
 
@@ -38,7 +38,7 @@ const generateOtp = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: `OTP sent successfully to ${email}`,
-            data: { expiresInSeconds: 60 },
+            data: { expiresInSeconds: 1800 },
         });
     } catch (error) {
         next(error);
