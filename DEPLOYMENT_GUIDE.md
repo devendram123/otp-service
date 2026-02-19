@@ -106,22 +106,23 @@ Go to [github.com/signup](https://github.com/signup) → sign up for free.
 
 ### 2.2 — Create a new repository
 
-1. Click the **+** icon (top-right) → **New repository**
-2. Name: `free-api-demo`
-3. Visibility: **Public** (Render free tier requires public repos, or connect GitHub App for private)
-4. **Do NOT** initialize with README (we'll push our own code)
+1. Go to **[https://github.com/new](https://github.com/new)**
+2. Repository name: `otp-service`
+3. Visibility: **Public**
+4. **Do NOT** check "Initialize with README"
 5. Click **Create repository**
 
 ### 2.3 — Push your code
 
-Open a terminal in your project folder and run:
+I have created a script to do this for you. Just run:
+
+```cmd
+.\deploy_to_github.bat
+```
+
+Or manually:
 
 ```bash
-git init
-git add .
-git commit -m "Initial commit - minimal API"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/free-api-demo.git
 git push -u origin main
 ```
 
